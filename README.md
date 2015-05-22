@@ -9,7 +9,9 @@ Paste in the following code: </br>
 if [ -f ~/.bash_easyaliases ]; then
   . ~/.bash_easyaliases
 fi
-```
+``` 
+Finally, run ```source ~/.bashrc``` or ```source ~/.bash_profile```. <br/>
+You're all set.
 
 # Usage
 * **Learn**: assign current working directory an alias. </br> ```learn <alias>``` </br> ```l <alias>```

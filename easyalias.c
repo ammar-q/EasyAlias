@@ -46,13 +46,16 @@ void initialize(char *filename) {
 
 void enter(struct list *L, char *R){
     struct pair *P = find(L, R);
+    increase_weight(P);
     P ? print_value(P) : printf(".\n") && fprintf(stderr, "%s - no matching alias\n", R);
+
 }
 
 void learn(struct list *L, char *K){
     struct pair *P = malloc(sizeof(*P));
     strncpy((*P).key, K, sizeof((*P).key));
     get_value(P);
+    (*P).weight = 1;
     add(L, P);
     print_pair(P, 0);
 }
@@ -110,6 +113,15 @@ void get_value(struct pair *P){
         perror("getcwd() error");
 }
 
+void increase_weight(struct pair *P) {
+    if (P) (*P).weight += 1;
+    if (P) (*P).weight *= 1.05;
+}
+
+void decrease_weight(struct pair *P) {
+    if (P) (*P).weight *= 0.99;
+}
+
 void clean_up(char *S){
     int i;
     for (i = 0; (S[i] != '\n' && S[i] != '\0'); i++);
@@ -158,13 +170,15 @@ void freelist(struct pair *P){
 }
 
 struct pair *find(struct list *L, char *R){ 
-    struct pair *cur;
+    struct pair *cur, *best = NULL;
+    int maxweight = -1;
     for (cur = (*L).top; cur; cur=(*cur).next){
-        if (matches((*cur).key, R)){
-            return cur;
+        if ((maxweight < (*cur).weight) && matches((*cur).key, R)){
+            best = cur;
+            maxweight = (*cur).weight; 
         }
     }
-    return cur;
+    return best;
 }
 
 
@@ -179,19 +193,20 @@ struct list *read_file(){
     struct pair **P = &(*L).top;
     struct pair *cur;
     if ((f = get_data_file(".easyalias","r"))){
-        int c = 1;
+        int c = 0;
         while(fgets(line, 1000, f) != NULL){
-            if (c % 2){
+            clean_up(line);
+            if (! (c % 3)) {
                 cur = malloc(sizeof(*cur));
                 *P = cur;
                 P = &(*cur).next; 
                 strncpy((*cur).key, line, sizeof((*cur).key));
-                clean_up((*cur).key);
                 (*L).maxlen = (((*L).maxlen) < strlen((*cur).key))? strlen((*cur).key) :
                 (*L).maxlen; 
-            } else {
+            } else if ((c % 3 == 1)) {
                 strncpy((*cur).value, line, sizeof((*cur).value));
-                clean_up((*cur).value);
+            } else {
+                (*cur).weight = atof(line);
             }
             c++;
         }
@@ -207,8 +222,10 @@ void write_file(struct list *L){
     if ((f = get_data_file(".easyalias", "w"))){
         struct pair *P;
         for (P = (*L).top; P; P=(*P).next){
+            decrease_weight(P);
             fprintf(f, "%s\n", (*P).key);
             fprintf(f, "%s\n", (*P).value);
+            fprintf(f, "%.6f\n", (*P).weight);
         }
         
         fclose(f);

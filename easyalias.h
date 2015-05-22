@@ -14,6 +14,7 @@
 struct pair {
     char key[256];
     char value[1000];
+    double weight;
     struct pair *next;
 };
 
@@ -39,6 +40,8 @@ void print_usage (char **argv);
 void print_value (struct pair *P);
 void print_pair  (struct pair *P, int padding);
 void get_value   (struct pair *P);
+void increase_weight(struct pair *P);
+void decrease_weight(struct pair *P);
 void clean_up    (char *S);
  int matches     (char *A, char *R);
 

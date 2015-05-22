@@ -8,19 +8,19 @@ void initialize(char *filename) {
     fprintf(f, "# EASYALIAS FUNCTIONS\n\n");
 
     fprintf(f, "enterfunction() {\n");
-    fprintf(f, "\tcd `easyalias -e \"$1\"`\n");
+    fprintf(f, "\tset -f; cd `easyalias -e \"$1\"`\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "learnfunction() {\n");
-    fprintf(f, "\teasyalias -l \"$1\"\n");
+    fprintf(f, "\tset -f; easyalias -l \"$1\"\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "forgetfunction() {\n");
-    fprintf(f, "\teasyalias -f \"$1\"\n");
+    fprintf(f, "\tset -f; easyalias -f \"$1\"\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "showfunction() {\n");
-    fprintf(f, "\teasyalias -s \n");
+    fprintf(f, "\tset -f; easyalias -s \n");
     fprintf(f, "}\n\n\n");
 
     fprintf(f, "# EASYALIAS INTERFACE\n\n");
@@ -54,20 +54,19 @@ void learn(struct list *L, char *K){
     strncpy((*P).key, K, sizeof((*P).key));
     get_value(P);
     add(L, P);
-    print_pair(P);
+    print_pair(P, 0);
 }
 
 void forget(struct list *L, char *R) {
     struct pair *P;
     while ((P = find(L, R))){
-        print_pair(P);
         drop(L, P);
     }
 }
 
 void show(struct list *L) {
     struct pair *P;
-    for (P = (*L).top; P; print_pair(P), P=(*P).next);
+    for (P = (*L).top; P; print_pair(P, (*L).maxlen), P=(*P).next);
 }
 
 
@@ -92,8 +91,18 @@ void print_value(struct pair *P){
     printf("%s\n", (*P).value);
 }
 
-void print_pair(struct pair *P){
-    printf("%s\t\t:\t\t%s\n", (*P).key, (*P).value);
+void print_pair(struct pair *P, int padding){
+    if (padding){
+        int i;
+        char *K = malloc(padding+1);
+        for (i = 0; i < padding; K[i++] = ' ');
+        memcpy(K, (*P).key, strlen((*P).key));
+        K[padding] = '\0';
+        printf("%s\t:\t%s\n", K, (*P).value);
+        free(K);
+    } 
+    else
+        printf("%s\t:\t%s\n", (*P).key, (*P).value);
 }
 
 void get_value(struct pair *P){
@@ -109,7 +118,7 @@ void clean_up(char *S){
 
 int matches(char *A, char *R){
     if (*A == '\0') return (*R == '\n' || *R == '\0' || (*R == '*' && matches(A, R+1)));
-    if (*R != '*') return *R != *A && *R != '?'? 0: matches(A+1, R+1);
+    if (*R != '*') return (*R != *A && *R != '?')? 0: matches(A+1, R+1);
     else return matches(A, R+1) || matches(A+1, R) || matches(A+1, R+1);
 }
 
@@ -166,6 +175,7 @@ struct list *read_file(){
     char line[1000];
     struct list *L = malloc(sizeof(*L));
     (*L).top = NULL;
+    (*L).maxlen = 0;
     struct pair **P = &(*L).top;
     struct pair *cur;
     if ((f = get_data_file(".easyalias","r"))){
@@ -177,6 +187,8 @@ struct list *read_file(){
                 P = &(*cur).next; 
                 strncpy((*cur).key, line, sizeof((*cur).key));
                 clean_up((*cur).key);
+                (*L).maxlen = (((*L).maxlen) < strlen((*cur).key))? strlen((*cur).key) :
+                (*L).maxlen; 
             } else {
                 strncpy((*cur).value, line, sizeof((*cur).value));
                 clean_up((*cur).value);
@@ -244,4 +256,5 @@ int main(int argc, char **argv){
         }
         write_file(L);
     }
+    return 0;
 }

@@ -47,8 +47,20 @@ void initialize(char *filename) {
 void enter(struct list *L, char *R){
     struct pair *P = find(L, R);
     increase_weight(P);
-    P ? print_value(P) : printf(".\n") && fprintf(stderr, "%s - no matching alias\n", R);
-
+    if (P) {
+        print_value(P);
+    }
+    else if (*(R+strlen(R)-2) != '*') {
+        char Rstar[1000];
+        strncpy(Rstar, R, strlen(R));
+        Rstar[strlen(R)] = '*';
+        Rstar[strlen(R)+1] = '\0';
+        enter(L, Rstar);
+    }
+    else {
+        printf(".\n");
+        fprintf(stderr, "%s - no matching alias\n", R);
+    }
 }
 
 void learn(struct list *L, char *K){
@@ -124,7 +136,7 @@ void decrease_weight(struct pair *P) {
 
 void clean_up(char *S){
     int i;
-    for (i = 0; (S[i] != '\n' && S[i] != '\0'); i++);
+    for (i = 0; (S[i] != '\n' && S[i] != ' ' && S[i] != '\0'); i++);
     S[i] = '\0';
 }
 
@@ -258,14 +270,15 @@ int main(int argc, char **argv){
             initialize(".bash_easyaliases");
         } else {
             L = read_file();
+            if (argc > 2) clean_up(argv[2]);
             if (!strncmp(argv[1], "-l", 2)){
-                if (argc > 2) learn(L, argv[2]); else print_usage(argv);
+                if (argc > 2 && strlen(argv[2])) learn(L, argv[2]); else print_usage(argv);
             } 
             else if (!strncmp(argv[1], "-e", 2)){
-                if (argc > 2) enter(L, argv[2]); else print_usage(argv);
+                if (argc > 2 && strlen(argv[2])) enter(L, argv[2]); else print_usage(argv);
             }
             else if (!strncmp(argv[1], "-f", 2)){
-                if (argc > 2) forget(L, argv[2]); else print_usage(argv);
+                if (argc > 2 && strlen(argv[2])) forget(L, argv[2]); else print_usage(argv);
             }
             else if (!strncmp(argv[1], "-s", 2)){
                 show(L);

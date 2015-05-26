@@ -20,7 +20,12 @@ void initialize(char *filename) {
     fprintf(f, "}\n\n");
 
     fprintf(f, "showfunction() {\n");
-    fprintf(f, "\tset -f; easyalias -s \n");
+    fprintf(f, "\tif [ $# -ge 1 ]\n");
+    fprintf(f, "\tthen\n");
+    fprintf(f, "\t\tset -f; easyalias -s \"$1\"\n");
+    fprintf(f, "\telse\n");
+    fprintf(f, "\t\teasyalias -s\n");
+    fprintf(f, "\tfi\n");
     fprintf(f, "}\n\n\n");
 
     fprintf(f, "# EASYALIAS INTERFACE\n\n");
@@ -65,7 +70,8 @@ void enter(struct list *L, char *R){
 
 void learn(struct list *L, char *K){
     struct pair *P = malloc(sizeof(*P));
-    strncpy((*P).key, K, sizeof((*P).key));
+    strncpy((*P).key, K, strlen(K)+1);
+    (*P).key[strlen(K)] = '\0';
     get_value(P);
     (*P).weight = 1;
     add(L, P);
@@ -79,9 +85,13 @@ void forget(struct list *L, char *R) {
     }
 }
 
-void show(struct list *L) {
-    struct pair *P;
-    for (P = (*L).top; P; print_pair(P, (*L).maxlen), P=(*P).next);
+void show(struct list *L, char *R) {
+    struct list *M = malloc(sizeof(*M));
+    (*M).top = NULL;
+    (*M).maxlen = -1; 
+    filter_list(M, L, R); 
+    print_list(M);
+    free(M);
 }
 
 
@@ -111,13 +121,18 @@ void print_pair(struct pair *P, int padding){
         int i;
         char *K = malloc(padding+1);
         for (i = 0; i < padding; K[i++] = ' ');
-        memcpy(K, (*P).key, strlen((*P).key));
         K[padding] = '\0';
+        memcpy(K, (*P).key, strlen((*P).key));
         printf("%s\t:\t%s\n", K, (*P).value);
         free(K);
     } 
     else
         printf("%s\t:\t%s\n", (*P).key, (*P).value);
+}
+
+void print_list(struct list *L) {
+    struct pair *P;
+    for (P = (*L).top; P; print_pair(P, (*L).maxlen), P=(*P).next);
 }
 
 void get_value(struct pair *P){
@@ -151,6 +166,7 @@ int matches(char *A, char *R){
 
 void add(struct list *L, struct pair *P) {
     struct pair **cur;
+    (*L).maxlen = (((*L).maxlen) < (int)strlen((*P).key))? strlen((*P).key) : (*L).maxlen; 
     for (cur = &(*L).top; (*cur) && (strcmp((**cur).key, (*P).key) < 0) ;cur = &((**cur).next));
 
     if (!*cur || strcmp((**cur).key, (*P).key)) {
@@ -183,7 +199,7 @@ void freelist(struct pair *P){
 
 struct pair *find(struct list *L, char *R){ 
     struct pair *cur, *best = NULL;
-    int maxweight = -1;
+    double maxweight = -1;
     for (cur = (*L).top; cur; cur=(*cur).next){
         if ((maxweight < (*cur).weight) && matches((*cur).key, R)){
             best = cur;
@@ -191,6 +207,17 @@ struct pair *find(struct list *L, char *R){
         }
     }
     return best;
+}
+
+void filter_list(struct list *M, struct list *L, char *R){
+    struct pair *P;
+    for (P = (*L).top; P; P = (*P).next){
+        if (matches((*P).key, R)){
+            struct pair *copy = malloc(sizeof(*copy));
+            memcpy(copy, P, sizeof(*copy));
+            add(M, copy);
+        }
+    }
 }
 
 
@@ -201,8 +228,7 @@ struct list *read_file(){
     char line[1000];
     struct list *L = malloc(sizeof(*L));
     (*L).top = NULL;
-    (*L).maxlen = 0;
-    struct pair **P = &(*L).top;
+    (*L).maxlen = -1;
     struct pair *cur;
     if ((f = get_data_file(".easyalias","r"))){
         int c = 0;
@@ -210,11 +236,8 @@ struct list *read_file(){
             clean_up(line);
             if (! (c % 3)) {
                 cur = malloc(sizeof(*cur));
-                *P = cur;
-                P = &(*cur).next; 
                 strncpy((*cur).key, line, sizeof((*cur).key));
-                (*L).maxlen = (((*L).maxlen) < strlen((*cur).key))? strlen((*cur).key) :
-                (*L).maxlen; 
+                add(L, cur);
             } else if ((c % 3 == 1)) {
                 strncpy((*cur).value, line, sizeof((*cur).value));
             } else {
@@ -281,7 +304,7 @@ int main(int argc, char **argv){
                 if (argc > 2 && strlen(argv[2])) forget(L, argv[2]); else print_usage(argv);
             }
             else if (!strncmp(argv[1], "-s", 2)){
-                show(L);
+                if (argc > 2 && strlen(argv[2])) show(L, argv[2]); else show(L, "*");
             }
         }
         write_file(L);

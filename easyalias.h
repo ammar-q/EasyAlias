@@ -32,25 +32,27 @@ void initialize(char *filename);
 void enter(struct list *L, char *R);
 void learn(struct list *L, char *K);
 void forget(struct list *L, char *R);
-void show(struct list *L);
+void show(struct list *L, char *R);
 
 
 /* HELPER FUNCTIONS */
-void print_usage (char **argv);
-void print_value (struct pair *P);
-void print_pair  (struct pair *P, int padding);
-void get_value   (struct pair *P);
-void increase_weight(struct pair *P);
-void decrease_weight(struct pair *P);
-void clean_up    (char *S);
- int matches     (char *A, char *R);
+void print_usage     (char **argv);
+void print_value     (struct pair *P);
+void print_pair      (struct pair *P, int padding);
+void print_list      (struct list *L);
+void get_value       (struct pair *P);
+void increase_weight (struct pair *P);
+void decrease_weight (struct pair *P);
+void clean_up        (char *S);
+ int matches         (char *A, char *R);
 
 
 /* LIST FUNCTIONS */
-void          add      (struct list *L, struct pair *P);
-void          drop     (struct list *L, struct pair *P);
-void          freelist (struct pair *P);
-struct pair * find     (struct list *L, char *R);
+void          add         (struct list *L, struct pair *P);
+void          drop        (struct list *L, struct pair *P);
+void          freelist    (struct pair *P);
+struct pair * find        (struct list *L, char *R);
+void          filter_list (struct list *M, struct list *L, char *R);
 
 
 /* FILE ACCESS */

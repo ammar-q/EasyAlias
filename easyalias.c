@@ -8,21 +8,21 @@ void initialize(char *filename) {
     fprintf(f, "# EASYALIAS FUNCTIONS\n\n");
 
     fprintf(f, "enterfunction() {\n");
-    fprintf(f, "\tset -f; cd `easyalias -e \"$1\"`\n");
+    fprintf(f, "\tset -f; cd `easyalias -e \"$1\"`; set +f\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "learnfunction() {\n");
-    fprintf(f, "\tset -f; easyalias -l \"$1\"\n");
+    fprintf(f, "\tset -f; easyalias -l \"$1\"; set +f\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "forgetfunction() {\n");
-    fprintf(f, "\tset -f; easyalias -f \"$1\"\n");
+    fprintf(f, "\tset -f; easyalias -f \"$1\"; set +f\n");
     fprintf(f, "}\n\n");
 
     fprintf(f, "showfunction() {\n");
     fprintf(f, "\tif [ $# -ge 1 ]\n");
     fprintf(f, "\tthen\n");
-    fprintf(f, "\t\tset -f; easyalias -s \"$1\"\n");
+    fprintf(f, "\t\tset -f; easyalias -s \"$1\"; set +f\n");
     fprintf(f, "\telse\n");
     fprintf(f, "\t\teasyalias -s\n");
     fprintf(f, "\tfi\n");
